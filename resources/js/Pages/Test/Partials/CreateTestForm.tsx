@@ -6,6 +6,8 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import { useForm } from '@inertiajs/react';
 import { Test } from '@/types/test';
+import { Button } from "@/Components/ui/button"
+
 
 export default function CreateTestForm() {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -24,7 +26,7 @@ export default function CreateTestForm() {
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        post(route('login'));
+        post(route('tests.store'));
     };
 
     return (
@@ -33,24 +35,25 @@ export default function CreateTestForm() {
             {status && <div className="mb-4 font-medium text-sm text-green-600">{status}</div>}
 
             <form onSubmit={submit}>
+            <Button>Click me</Button>
                 <div>
-                    <InputLabel htmlFor="email" value="Email" />
+                    <InputLabel htmlFor="title" value="Title" />
 
                     <TextInput
-                        id="email"
-                        type="email"
-                        name="email"
-                        value={data.email}
+                        id="title"
+                        type="title"
+                        name="title"
+                        value={data.title}
                         className="mt-1 block w-full"
                         autoComplete="username"
                         isFocused={true}
-                        onChange={(e) => setData('email', e.target.value)}
+                        onChange={(e) => setData('title', e.target.value)}
                     />
 
-                    <InputError message={errors.email} className="mt-2" />
+                    <InputError message={errors.title} className="mt-2" />
                 </div>
 
-                <div className="mt-4">
+                {/* <div className="mt-4">
                     <InputLabel htmlFor="password" value="Password" />
 
                     <TextInput
@@ -90,8 +93,8 @@ export default function CreateTestForm() {
                     <PrimaryButton className="ms-4" disabled={processing}>
                         Log in
                     </PrimaryButton>
-                </div>
+                </div> */}
             </form>
-        </GuestLayout>
+        </>
     );
 }
