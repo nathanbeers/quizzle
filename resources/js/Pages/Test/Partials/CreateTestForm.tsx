@@ -4,7 +4,7 @@ import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import { useForm } from '@inertiajs/react';
 import { Test } from '@/types/test';
-import Button from '@/Components/Button';
+import Button from '@/Components/ui/Button';
 
 
 export default function CreateTestForm() {

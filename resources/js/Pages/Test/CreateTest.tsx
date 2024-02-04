@@ -5,7 +5,7 @@ import { PageProps } from '@/types';
 import type { Test } from '@/types/test';
 import axios from '@/lib/axios';
 import CreateTestForm from './Partials/CreateTestForm';
-import Button from '@/Components/Button';
+import Button from '@/Components/ui/Button';
 
 export default function CreateTest() {
     const [tests, setTests] = useState<Test[]>([]);
