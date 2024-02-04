@@ -5,6 +5,7 @@ import { PageProps } from '@/types';
 import type { Test } from '@/types/test';
 import axios from '@/lib/axios';
 import CreateTestForm from './Partials/CreateTestForm';
+import Button from '@/Components/Button';
 
 export default function CreateTest() {
     const [tests, setTests] = useState<Test[]>([]);
@@ -37,8 +38,9 @@ export default function CreateTest() {
             <Head title="Create New Test" />
 
             <div className="py-12">
+                <Button color="green">Click me</Button>
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    {/* <CreateTestForm /> */}
+                    <CreateTestForm />
                 </div>
             </div>
         </AuthenticatedLayout>
