@@ -1,55 +1,42 @@
-import { useEffect, FormEventHandler } from 'react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
-import { useForm } from '@inertiajs/react';
 import { Test } from '@/types/test';
 import Button from '@/Components/ui/Button';
+import { useForm, SubmitHandler } from "react-hook-form"
+import Input from '@/Components/ui/Input';
+import FieldWrapper from '@/Components/ui/FieldWrapper';
+
+type Inputs = {
+  title: string;
+  description: string;
+  tags: string[];
+  questions: string[];
+}
 
 
 export default function CreateTestForm() {
-    const { data, setData, post, processing, errors, reset } = useForm({
-        title: '',
-        description: '',
-        tags: [],
-        questions: [],
-    });
+    const {
+        register,
+        handleSubmit,
+        watch,
+        formState: { errors },
+      } = useForm<Inputs>()
 
-    // useEffect(() => {
-    //     return () => {
-    //         reset('password');
-    //     };
-    // }, []);
-
-    const submit: FormEventHandler = (e) => {
-        e.preventDefault();
-
-        post(route('tests.store'));
-    };
+      const onSubmit: SubmitHandler<Inputs> = (data) => {
+        console.log(data);
+    }
 
     return (
         <>
 
             {status && <div className="mb-4 font-medium text-sm text-green-600">{status}</div>}
 
-            <form onSubmit={submit}>
-            <Button>Click me</Button>
-                <div>
-                    <InputLabel htmlFor="title" value="Title" />
+            <form onSubmit={handleSubmit(onSubmit)}>
 
-                    <TextInput
-                        id="title"
-                        type="title"
-                        name="title"
-                        value={data.title}
-                        className="mt-1 block w-full"
-                        autoComplete="username"
-                        isFocused={true}
-                        onChange={(e) => setData('title', e.target.value)}
-                    />
-
-                    <InputError message={errors.title} className="mt-2" />
-                </div>
+                <FieldWrapper>
+                    <Input register={register} label="Title" id="title" required />
+                </FieldWrapper>
 
                 {/* <div className="mt-4">
                     <InputLabel htmlFor="password" value="Password" />
