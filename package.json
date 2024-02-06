@@ -27,6 +27,7 @@
         "clsx": "^2.1.0",
         "flowbite": "^2.2.1",
         "flowbite-react": "^0.7.2",
-        "react-hook-form": "^7.50.0"
+        "react-hook-form": "^7.50.0",
+        "uuid": "^9.0.1"
     }
 }

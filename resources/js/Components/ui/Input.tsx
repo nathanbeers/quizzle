@@ -7,13 +7,13 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   id: string;
   name?: string;
   type?: string;
-  error: string | boolean;
+  error?: string | boolean;
+  required?: boolean;
   register: UseFormRegister<any>;
-  required: boolean;
 }
 
 const Input = ({ label, id, register, required = false, error = '', type = 'text', name = label, ...rest }: InputProps) => (
-  <div>
+  <>
     <label htmlFor={id} className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
         {label}{required && <span className="text-red-500">*</span>}
     </label>
@@ -29,7 +29,7 @@ const Input = ({ label, id, register, required = false, error = '', type = 'text
         aria-invalid={!!error}
     />
     {error && <p role="alert" className="text-red-500 text-xs mt-1">{error}</p>}
-  </div>
+  </>
 );
 
 export default Input;

@@ -17,16 +17,13 @@ export default function Authenticated({ user, header, children }: PropsWithChild
                         <div className="flex">
                             <div className="shrink-0 flex items-center">
                                 <Link href="/">
-                                    <ApplicationLogo className="block h-9 w-auto fill-current text-gray-800" />
+                                    <ApplicationLogo className="block w-auto fill-current max-h-[50px]" />
                                 </Link>
                             </div>
 
                             <div className="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                                 <NavLink href={route('dashboard')} active={route().current('dashboard')}>
                                     Dashboard
-                                </NavLink>
-                                <NavLink href={route('user.tests')} active={route().current('user.tests')}>
-                                    Tests
                                 </NavLink>
                                 <div className="hidden sm:flex sm:items-center sm:ms-6">
                                     <div className="ms-3 relative">
@@ -37,8 +34,7 @@ export default function Authenticated({ user, header, children }: PropsWithChild
                                                         type="button"
                                                         className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150"
                                                     >
-                                                        {user.name}
-
+                                                        Tests
                                                         <svg
                                                             className="ms-2 -me-0.5 h-4 w-4"
                                                             xmlns="http://www.w3.org/2000/svg"

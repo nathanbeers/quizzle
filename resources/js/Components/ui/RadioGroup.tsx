@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface Choice {
     id: string;
     name: string;
@@ -39,7 +37,7 @@ const RadioGroup = ({ choices, layout, groupName }: RadioGroupProps) => {
             {choices.map((choice) => (
                 <Radio
                     key={choice.id}
-                    id={choice.id}
+                    id={`${choice.name.toLowerCase().split(' ').join('-')}-${choice.id}`}
                     label={choice.name}
                     name={groupName}
                     className={layout === 'horizontal' ? 'mr-4' : 'mb-4'}
