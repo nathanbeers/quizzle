@@ -42,7 +42,7 @@ const Radio = ({ id, label, name, register, required, ...props }: RadioProps) =>
 const RadioGroup = ({ layout, children, legend, error = '' }: RadioGroupProps) => {
     return (
         <fieldset className="block mb-3 text-sm font-medium text-gray-900 dark:text-white">
-            <legend>{legend}</legend>
+            <legend className="font-bold mb-2">{legend}</legend>
             <div className={layout === 'horizontal' ? 'flex' : 'flex flex-col'}>
                 {children}
             </div>

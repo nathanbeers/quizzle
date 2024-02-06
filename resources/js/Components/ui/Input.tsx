@@ -18,7 +18,7 @@ const Input = ({ label, id, register, required = false, hideLabel = false, error
     <label
         htmlFor={id}
         className={clsx(
-            'block mb-2 text-sm font-medium text-gray-900 dark:text-white',
+            'block mb-2 text-sm font text-gray-900 dark:text-white font-bold',
             hideLabel && 'sr-only',
         )}
     >

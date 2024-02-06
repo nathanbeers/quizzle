@@ -41,12 +41,12 @@ export default function CreateTestForm({ userID }: { userID: number }) {
 
     const watchQuestionField = watch('questions');
 
-    // useEffect(() => {
-    //     const subscription = watch((value, { name, type }) =>
-    //         console.log(value, name, type)
-    //     )
-    //     return () => subscription.unsubscribe()
-    // }, [watchQuestionField])
+    useEffect(() => {
+        const subscription = watch((value, { name, type }) =>
+            console.log(value, name, type)
+        )
+        return () => subscription.unsubscribe()
+    }, [watchQuestionField])
 
     const onSubmit: SubmitHandler<Inputs> = async (data) => {
         setIsLoading(true);
@@ -220,9 +220,9 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                     Add Question
                 </Button>
                 <Modal show={openQuestionModal} onClose={() => handleRemoveQuestion(getValues('questions').length - 1)}>
-                    <Modal.Header>Add Question</Modal.Header>
+                    <Modal.Header>New Question</Modal.Header>
                     <Modal.Body>
-                        <form className="space-y-6">
+                        <div className="space-y-6">
                             <FieldWrapper>
                                 <Input
                                     register={register}
@@ -299,14 +299,19 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                             </FieldWrapper>
 
                             {
-                                getLastQuestion()?.choices?.length &&
+                                getLastQuestion()?.choices?.length && getLastQuestion()?.type === 'Multiple Choice' &&
+                                    <p className="font-bold !-mb-3">Choices</p>
+                            }
+
+                            {
+                                getLastQuestion()?.choices?.length && getLastQuestion()?.type === 'Multiple Choice' &&
                                     getLastQuestion()?.choices.map((choice, index) => (
                                         <div className='flex gap-3' key={choice.id}>
                                             <Input
                                                 register={register}
                                                 label={`Choice ${index + 1}`}
                                                 id={`choice-${index}`}
-                                                name={`questions.${getValues('questions')?.length - 1}.choice.${index}`}
+                                                name={`questions.${getValues('questions')?.length - 1}.choices.${index}.text`}
                                                 placeholder="Enter choice"
                                                 type="text"
                                                 aria-label={`Choice ${index + 1}`}
@@ -326,7 +331,7 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                                     </Button>
                             }
 
-                        </form>
+                        </div>
                     </Modal.Body>
                     <Modal.Footer>
                         <Button onClick={() => handleSaveQuestion(getValues('questions').length - 1, getValues('questions')[getValues('questions').length - 1])}>
@@ -344,7 +349,7 @@ export default function CreateTestForm({ userID }: { userID: number }) {
             </FieldWrapper>
 
             <FieldWrapper>
-                <Button type="submit" color="green">Save</Button>
+                <Button type="submit" color="green">Save Test</Button>
             </FieldWrapper>
         </form>
     );
