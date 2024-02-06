@@ -6,10 +6,11 @@ export interface QuestionResponse {
     created_at: string;
     updated_at: string;
     title: string;
-    type: 'multipleChoice' | 'shortAnswer' | 'trueFalse' | 'essay';
+    type: 'Multiple Choice' | 'Short Answer' | 'True False' | 'Essay';
     description?: string;
     autoGrade: boolean;
-    answer?: string | number | [];
+    answer?: string;
+    choices?: any[];
 }
 
 type BaseQuestionForm = {
@@ -17,15 +18,16 @@ type BaseQuestionForm = {
     title: string;
     description?: string;
     autoGrade: boolean;
+    choices: any[];
 };
 
 type MultipleChoiceOrTrueFalseQuestionForm = BaseQuestionForm & {
-    type: 'multipleChoice' | 'trueFalse';
-    answer: string[];
+    type: 'Multiple Choice' | 'True False';
+    answer: string;
 };
 
 type OtherQuestionForm = BaseQuestionForm & {
-    type: 'shortAnswer' | 'essay';
+    type: 'Short Answer' | 'Essay';
     answer?: string;
 };
 
@@ -40,5 +42,5 @@ export interface Test {
     created_at: string;
     updated_at: string;
     tags: string[];
-    questions: Question[];
+    questions: QuestionForm[];
 }

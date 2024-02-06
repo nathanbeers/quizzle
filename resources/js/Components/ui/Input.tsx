@@ -4,6 +4,7 @@ import clsx from 'clsx';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
+  hideLabel?: boolean;
   id: string;
   name?: string;
   type?: string;
@@ -12,9 +13,15 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   register: UseFormRegister<any>;
 }
 
-const Input = ({ label, id, register, required = false, error = '', type = 'text', name = label, ...rest }: InputProps) => (
+const Input = ({ label, id, register, required = false, hideLabel = false, error = '', type = 'text', name = label, ...rest }: InputProps) => (
   <>
-    <label htmlFor={id} className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+    <label
+        htmlFor={id}
+        className={clsx(
+            'block mb-2 text-sm font-medium text-gray-900 dark:text-white',
+            hideLabel && 'sr-only',
+        )}
+    >
         {label}{required && <span className="text-red-500">*</span>}
     </label>
     <input

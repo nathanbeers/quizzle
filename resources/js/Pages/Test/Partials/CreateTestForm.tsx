@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, SubmitHandler, useFieldArray } from "react-hook-form"
 import Button from '@/Components/ui/Button';
 import Input from '@/Components/ui/Input';
@@ -10,7 +10,7 @@ import { Modal, Card } from 'flowbite-react';
 import type { QuestionForm } from '@/types/test';
 import { extractStringValues } from '@/helpers';
 import { v4 as uuidv4 } from 'uuid';
-import RadioGroup from '@/Components/ui/RadioGroup';
+import { RadioGroup, Radio } from '@/Components/ui/RadioGroup';
 
 type Inputs = {
   title: string;
@@ -30,6 +30,7 @@ export default function CreateTestForm({ userID }: { userID: number }) {
         control,
         getValues,
         setValue,
+        watch,
         formState: { errors },
     } = useForm<Inputs>();
 
@@ -37,6 +38,15 @@ export default function CreateTestForm({ userID }: { userID: number }) {
         control,
         name: "tags",
     });
+
+    const watchQuestionField = watch('questions');
+
+    // useEffect(() => {
+    //     const subscription = watch((value, { name, type }) =>
+    //         console.log(value, name, type)
+    //     )
+    //     return () => subscription.unsubscribe()
+    // }, [watchQuestionField])
 
     const onSubmit: SubmitHandler<Inputs> = async (data) => {
         setIsLoading(true);
@@ -68,8 +78,9 @@ export default function CreateTestForm({ userID }: { userID: number }) {
             setValue('questions', [...getValues('questions'), {
                 question_id: `${userID}${uuidv4()}`,
                 title: '',
-                type: 'multipleChoice',
-                answer: [],
+                type: 'Multiple Choice',
+                choices: [],
+                answer: '',
                 description: '',
                 autoGrade: true,
             }]);
@@ -78,8 +89,9 @@ export default function CreateTestForm({ userID }: { userID: number }) {
             setValue('questions', [{
                 question_id: `${userID}${uuidv4()}`,
                 title: '',
-                type: 'multipleChoice',
-                answer: [],
+                type: 'Multiple Choice',
+                choices: [],
+                answer: '',
                 description: '',
                 autoGrade: true,
             }]);
@@ -94,21 +106,30 @@ export default function CreateTestForm({ userID }: { userID: number }) {
     };
 
     const handleSaveQuestion = (index: number, question: QuestionForm) => {
-        const newQuestions = [...getValues('questions'), question];
-        setValue('questions', newQuestions);
+        const allQuestions = getValues('questions');
+        allQuestions[index] = question;
+        setValue('questions', allQuestions);
+        setopenQuestionModal(false);
     };
 
-    const handleAddAnswer = () => {
+    const handleAddChoice = () => {
         const allQuestions = getValues('questions');
         const question = allQuestions[allQuestions.length - 1]
-        console.log(allQuestions, question);
-
-        if (Array.isArray(question.answer)) {
-            question.answer.push('');
-        }
+        question.choices.push({ id: uuidv4(), text: '' });
 
         setValue('questions', allQuestions);
     }
+
+    const handleRemoveChoice = (index: number) => {
+        const lastQuestion = getLastQuestion();
+        const newChoices = lastQuestion?.choices.filter((_, i) => i !== index);
+
+        if (lastQuestion && newChoices) {
+            const allQuestions = getValues('questions');
+            allQuestions[index] = lastQuestion;
+            setValue('questions', allQuestions);
+        }
+    };
 
     const FormErrors = () => (
         formErrors.map((error, index) => ( <p key={index} className="text-red-500">{error}</p>))
@@ -141,7 +162,7 @@ export default function CreateTestForm({ userID }: { userID: number }) {
             <FieldWrapper>
                 <Textarea
                     register={register}
-                    label="Description"
+                    label="Description (optional)"
                     placeholder="Test Description"
                     name="description"
                     id="description"
@@ -149,25 +170,27 @@ export default function CreateTestForm({ userID }: { userID: number }) {
             </FieldWrapper>
 
             <FieldWrapper>
-                <label htmlFor="tags" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tags</label>
-                <small className='mb-4'>Adding tags to your test will help you sort tests.</small>
-                <ul>
-                    {fields.map((field, index) => (
-                        <li key={field.id} className="flex items-center gap-2">
-                            <Input
-                                register={register}
-                                label={`Tag ${index + 1}`}
-                                id={`tag-${index}`}
-                                name={`tags.${index}.tag`}
-                                placeholder="Enter a tag"
-                                type="text"
-                            />
-                            <Button type="button" color="red" onClick={() => remove(index)}>
-                                Remove
-                            </Button>
-                        </li>
-                    ))}
-                </ul>
+                <fieldset className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                    <legend>Tags (optional)</legend>
+                    <small className='mb-4'><em>Adding tags to your test can help you sort/filter tests.</em></small>
+                    <ul>
+                        {fields.map((field, index) => (
+                            <li key={field.id} className="flex items-center gap-2">
+                                <Input
+                                    register={register}
+                                    label={`Tag ${index + 1}`}
+                                    id={`tag-${index}`}
+                                    name={`tags.${index}.tag`}
+                                    placeholder="Enter a tag"
+                                    type="text"
+                                />
+                                <Button type="button" color="red" onClick={() => remove(index)}>
+                                    Remove
+                                </Button>
+                            </li>
+                        ))}
+                    </ul>
+                </fieldset>
                 <Button type="button" onClick={() => append({ tag: '' })}>
                     Add Tag
                 </Button>
@@ -176,15 +199,21 @@ export default function CreateTestForm({ userID }: { userID: number }) {
             <FieldWrapper>
                 <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Questions</label>
                 {getValues('questions')?.map((question, index) => (
+
                     <div key={question.question_id} className="flex items-center gap-2">
-                        <Card href="#" className="max-w-sm">
-                            <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-                                {question.title}
-                            </h5>
-                        </Card>
-                        <Button type="button" color="red" onClick={() => handleRemoveQuestion(index)}>
-                            Remove
-                        </Button>
+                        {
+                            question.title &&
+                                <>
+                                    <Card href="#" className="max-w-sm">
+                                        <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+                                            {question.title}
+                                        </h5>
+                                    </Card>
+                                    <Button type="button" color="red" onClick={() => handleRemoveQuestion(index)}>
+                                        Remove
+                                    </Button>
+                                </>
+                        }
                     </div>
                 ))}
                 <Button type="button" onClick={handleAddQuestion}>
@@ -201,6 +230,7 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                                     type='text'
                                     id={`question-${getValues('questions')?.length - 1}`}
                                     name={`questions.${getValues('questions')?.length - 1}.title`}
+                                    required
                                 />
                             </FieldWrapper>
                             <FieldWrapper>
@@ -213,9 +243,9 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                                 />
                             </FieldWrapper>
                             {
-                                getLastQuestion()?.type === 'multipleChoice' && Array.isArray(getLastQuestion()?.answer) &&
-                                    (getLastQuestion()?.answer as any).map((a: string[], index: number) => (
-                                        <FieldWrapper key={a[index]}>
+                                getLastQuestion()?.type === 'Multiple Choice' && Array.isArray(getLastQuestion()?.answer) &&
+                                    (getLastQuestion()?.choices as any).map((a: {id:string, text:string}, index: number) => (
+                                        <FieldWrapper key={a.id}>
                                             <Input
                                                 register={register}
                                                 label={`Answer ${index + 1}`}
@@ -230,21 +260,69 @@ export default function CreateTestForm({ userID }: { userID: number }) {
 
                             <FieldWrapper>
                                 <RadioGroup
-                                    layout='vertical'
-                                    groupName={`questions.${getValues('questions')?.length - 1}.type`}
-                                    choices={[
-                                        { id: '1', name: 'multipleChoice'},
-                                        { id: '2', name: 'trueFalse'},
-                                        { id: '3', name: 'shortAnswer'},
-                                        { id: '4', name: 'essay'},
-                                    ]}
-                                />
+                                    layout="vertical"
+                                    legend="Question Type"
+                                >
+                                    <Radio
+                                        register={register}
+                                        id="multiple-choice-radio"
+                                        label="Multiple Choice"
+                                        name={`questions.${getValues('questions')?.length - 1}.type`}
+                                        className='mb-2'
+                                        required={true}
+                                    />
+                                    <Radio
+                                        register={register}
+                                        id="true-false-radio"
+                                        label="True False"
+                                        name={`questions.${getValues('questions')?.length - 1}.type`}
+                                        className='mb-2'
+                                        required={true}
+                                    />
+                                    <Radio
+                                        register={register}
+                                        id="short-answer-radio"
+                                        label="Short Answer"
+                                        name={`questions.${getValues('questions')?.length - 1}.type`}
+                                        className='mb-2'
+                                        required={true}
+                                    />
+                                    <Radio
+                                        register={register}
+                                        id="essay-radio"
+                                        label="Essay"
+                                        name={`questions.${getValues('questions')?.length - 1}.type`}
+                                        className='mb-2'
+                                        required={true}
+                                    />
+                                </RadioGroup>
                             </FieldWrapper>
 
                             {
-                                getLastQuestion()?.type === 'multipleChoice' &&
-                                    <Button type="button" onClick={handleAddAnswer}>
-                                        Add Answer
+                                getLastQuestion()?.choices?.length &&
+                                    getLastQuestion()?.choices.map((choice, index) => (
+                                        <div className='flex gap-3' key={choice.id}>
+                                            <Input
+                                                register={register}
+                                                label={`Choice ${index + 1}`}
+                                                id={`choice-${index}`}
+                                                name={`questions.${getValues('questions')?.length - 1}.choice.${index}`}
+                                                placeholder="Enter choice"
+                                                type="text"
+                                                aria-label={`Choice ${index + 1}`}
+                                                hideLabel={true}
+                                            />
+                                            <Button type="button" size="lg" color="red" onClick={() => handleRemoveChoice(index)}>
+                                                Remove
+                                            </Button>
+                                        </div>
+                                    ))
+                            }
+
+                            {
+                                getLastQuestion()?.type === 'Multiple Choice' &&
+                                    <Button type="button" className="mt-3" onClick={handleAddChoice}>
+                                        Add Answer Choice
                                     </Button>
                             }
 
