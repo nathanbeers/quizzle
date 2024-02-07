@@ -8,7 +8,7 @@ export interface QuestionResponse {
     title: string;
     type: 'Multiple Choice' | 'Short Answer' | 'True False' | 'Essay';
     description?: string;
-    autoGrade: boolean;
+    autoGrade: string;
     answer?: string;
     choices?: any[];
 }
@@ -17,8 +17,9 @@ type BaseQuestionForm = {
     question_id: string;
     title: string;
     description?: string;
-    autoGrade: boolean;
+    autoGrade: string;
     choices: any[];
+    saved: boolean;
 };
 
 type MultipleChoiceOrTrueFalseQuestionForm = BaseQuestionForm & {

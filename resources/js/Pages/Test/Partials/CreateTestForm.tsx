@@ -24,6 +24,7 @@ type Inputs = {
 export default function CreateTestForm({ userID }: { userID: number }) {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [formErrors, setFormErrors] = useState<string[]>([])
+    const [questionFormErrors, setquestionFormErrors] = useState<string[]>([])
     const [openQuestionModal, setopenQuestionModal] = useState<boolean>(false);
 
     const {
@@ -84,7 +85,8 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                 choices: [],
                 answer: '',
                 description: '',
-                autoGrade: true,
+                autoGrade: 'Auto Grade',
+                saved: false,
             }]);
         }
         else {
@@ -95,7 +97,8 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                 choices: [],
                 answer: '',
                 description: '',
-                autoGrade: true,
+                autoGrade: 'Auto Grade',
+                saved: false,
             }]);
         }
         setopenQuestionModal(true);
@@ -105,14 +108,44 @@ export default function CreateTestForm({ userID }: { userID: number }) {
         const newQuestions = getValues('questions').filter((_, i) => i !== index);
         setValue('questions', newQuestions);
         setopenQuestionModal(false);
+        setquestionFormErrors([]);
     };
 
     const handleSaveQuestion = (index: number, question: QuestionForm) => {
         const allQuestions = getValues('questions');
         allQuestions[index] = question;
+
+        if (!isQuestionFormValid(index, question)) {
+            return;
+        }
+
+        setquestionFormErrors([]);
+        allQuestions[index].saved = true;
         setValue('questions', allQuestions);
         setopenQuestionModal(false);
     };
+
+    const isQuestionFormValid = (index: number, question: QuestionForm): boolean => {
+        if (!question.title) {
+            setquestionFormErrors(['Question is required']);
+
+            return false;
+        }
+
+        if (question.type === 'Multiple Choice' && question.choices.length < 2) {
+            setquestionFormErrors(['Multiple Choice question must have at least 2 choices']);
+
+            return false;
+        }
+
+        if (question.type === 'Multiple Choice' && !question.answer) {
+            setquestionFormErrors(['Multiple Choice question must have a correct answer']);
+
+            return false;
+        }
+
+        return true;
+    }
 
     const handleAddChoice = () => {
         const allQuestions = getValues('questions');
@@ -143,6 +176,10 @@ export default function CreateTestForm({ userID }: { userID: number }) {
         }
 
         return undefined;
+    }
+
+    const getLastQuestionIndex = (): number => {
+        return getValues('questions')?.length - 1 || 0;
     }
 
     return (
@@ -204,7 +241,7 @@ export default function CreateTestForm({ userID }: { userID: number }) {
 
                     <div key={question.question_id} className="flex items-center gap-2">
                         {
-                            question.title &&
+                            question.saved &&
                                 <>
                                     <Card href="#" className="max-w-sm">
                                         <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
@@ -221,17 +258,17 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                 <Button type="button" onClick={handleAddQuestion}>
                     Add Question
                 </Button>
-                <Modal show={openQuestionModal} onClose={() => handleRemoveQuestion(getValues('questions').length - 1)}>
+                <Modal show={openQuestionModal} onClose={() => handleRemoveQuestion(getLastQuestionIndex())}>
                     <Modal.Header>New Question</Modal.Header>
                     <Modal.Body>
                         <div className="space-y-6">
                             <FieldWrapper>
                                 <Input
                                     register={register}
-                                    label='Question Title'
+                                    label='Question'
                                     type='text'
-                                    id={`question-${getValues('questions')?.length - 1}`}
-                                    name={`questions.${getValues('questions')?.length - 1}.title`}
+                                    id={`question-${getLastQuestionIndex()}`}
+                                    name={`questions.${getLastQuestionIndex()}.title`}
                                     required
                                 />
                             </FieldWrapper>
@@ -240,8 +277,8 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                                     register={register}
                                     label="Question Description (optional)"
                                     placeholder="If you need to write any explanation text about the question"
-                                    id={`question-${getValues('questions')?.length - 1}`}
-                                    name={`questions.${getValues('questions')?.length - 1}.description`}
+                                    id={`question-${getLastQuestionIndex()}`}
+                                    name={`questions.${getLastQuestionIndex()}.description`}
                                 />
                             </FieldWrapper>
                             {
@@ -269,7 +306,7 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                                         register={register}
                                         id="multiple-choice-radio"
                                         label="Multiple Choice"
-                                        name={`questions.${getValues('questions')?.length - 1}.type`}
+                                        name={`questions.${getLastQuestionIndex()}.type`}
                                         className='mb-2'
                                         required={true}
                                     />
@@ -277,7 +314,7 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                                         register={register}
                                         id="true-false-radio"
                                         label="True False"
-                                        name={`questions.${getValues('questions')?.length - 1}.type`}
+                                        name={`questions.${getLastQuestionIndex()}.type`}
                                         className='mb-2'
                                         required={true}
                                     />
@@ -285,7 +322,7 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                                         register={register}
                                         id="short-answer-radio"
                                         label="Short Answer"
-                                        name={`questions.${getValues('questions')?.length - 1}.type`}
+                                        name={`questions.${getLastQuestionIndex()}.type`}
                                         className='mb-2'
                                         required={true}
                                     />
@@ -293,7 +330,7 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                                         register={register}
                                         id="essay-radio"
                                         label="Essay"
-                                        name={`questions.${getValues('questions')?.length - 1}.type`}
+                                        name={`questions.${getLastQuestionIndex()}.type`}
                                         className='mb-2'
                                         required={true}
                                     />
@@ -301,19 +338,19 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                             </FieldWrapper>
 
                             {
-                                getLastQuestion()?.choices?.length && getLastQuestion()?.type === 'Multiple Choice' &&
+                                (getLastQuestion()?.choices?.length ?? 0) > 0 && getLastQuestion()?.type === 'Multiple Choice' &&
                                     <p className="font-bold !-mb-3">Choices</p>
                             }
 
                             {
-                                getLastQuestion()?.choices?.length && getLastQuestion()?.type === 'Multiple Choice' &&
+                                (getLastQuestion()?.choices?.length ?? 0) > 0 && getLastQuestion()?.type === 'Multiple Choice' &&
                                     getLastQuestion()?.choices.map((choice, index) => (
                                         <div className='flex gap-3' key={choice.id}>
                                             <Input
                                                 register={register}
                                                 label={`Choice ${index + 1}`}
                                                 id={`choice-${index}`}
-                                                name={`questions.${getValues('questions')?.length - 1}.choices.${index}.text`}
+                                                name={`questions.${getLastQuestionIndex()}.choices.${index}.text`}
                                                 placeholder="Enter choice"
                                                 type="text"
                                                 aria-label={`Choice ${index + 1}`}
@@ -337,10 +374,10 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                                 (getLastQuestion()?.type === 'Multiple Choice' || getLastQuestion()?.type === 'True False') &&
                                     <CheckboxGroup
                                         legend={
-                                            <div className='flex items-center gap-3'>
+                                            <div className='flex items-center gap-2'>
                                                 <span>Auto Grade Question</span>
                                                 <Tooltip content="If checked, Quizzle will grade this question for you.">
-                                                    <QuestionCircle />
+                                                    <QuestionCircle height={16} color='#111827' />
                                                 </Tooltip>
                                             </div>
                                         }
@@ -351,20 +388,25 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                                             register={register}
                                             id={`auto-grade`}
                                             label="Auto Grade"
-                                            name={`questions.${getValues('questions')?.length - 1}.autoGrade`}
+                                            name={`questions.${getLastQuestionIndex()}.autoGrade`}
                                         />
                                     </CheckboxGroup>
                             }
 
                         </div>
                     </Modal.Body>
-                    <Modal.Footer>
-                        <Button onClick={() => handleSaveQuestion(getValues('questions').length - 1, getValues('questions')[getValues('questions').length - 1])}>
-                            Save
-                        </Button>
-                        <Button color="red" onClick={() => handleRemoveQuestion(getValues('questions').length - 1)}>
-                            Cancel
-                        </Button>
+                    <Modal.Footer className='flex-col items-start space-x-0'>
+                        {
+                            questionFormErrors.map((error, index) => ( <p key={index} className="text-red-500 mb-2">{error}</p>))
+                        }
+                        <div className="flex gap-2 ml-0">
+                            <Button onClick={() => handleSaveQuestion(getLastQuestionIndex(), getValues('questions')[getLastQuestionIndex()])}>
+                                Save
+                            </Button>
+                            <Button color="red" onClick={() => handleRemoveQuestion(getLastQuestionIndex())}>
+                                Cancel
+                            </Button>
+                        </div>
                     </Modal.Footer>
                 </Modal>
             </FieldWrapper>
