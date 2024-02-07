@@ -6,11 +6,13 @@ import FieldWrapper from '@/Components/ui/FieldWrapper';
 import Loading from '@/Components/ui/Loading';
 import axios from 'axios';
 import Textarea from '@/Components/ui/Textarea';
-import { Modal, Card } from 'flowbite-react';
+import { Modal, Card, Tooltip } from 'flowbite-react';
 import type { QuestionForm } from '@/types/test';
 import { extractStringValues } from '@/helpers';
 import { v4 as uuidv4 } from 'uuid';
 import { RadioGroup, Radio } from '@/Components/ui/RadioGroup';
+import { CheckboxGroup, Checkbox} from '@/Components/ui/CheckboxGroup';
+import QuestionCircle from '@/Components/ui/icons/QuestionCircle';
 
 type Inputs = {
   title: string;
@@ -329,6 +331,29 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                                     <Button type="button" className="mt-3" onClick={handleAddChoice}>
                                         Add Answer Choice
                                     </Button>
+                            }
+
+                            {
+                                (getLastQuestion()?.type === 'Multiple Choice' || getLastQuestion()?.type === 'True False') &&
+                                    <CheckboxGroup
+                                        legend={
+                                            <div className='flex items-center gap-3'>
+                                                <span>Auto Grade Question</span>
+                                                <Tooltip content="If checked, Quizzle will grade this question for you.">
+                                                    <QuestionCircle />
+                                                </Tooltip>
+                                            </div>
+                                        }
+                                        layout='vertical'
+                                        className='mb-2'
+                                    >
+                                        <Checkbox
+                                            register={register}
+                                            id={`auto-grade`}
+                                            label="Auto Grade"
+                                            name={`questions.${getValues('questions')?.length - 1}.autoGrade`}
+                                        />
+                                    </CheckboxGroup>
                             }
 
                         </div>
