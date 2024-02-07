@@ -85,7 +85,7 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                 choices: [],
                 answer: '',
                 description: '',
-                autoGrade: 'Auto Grade',
+                autoGrade: 'yes',
                 saved: false,
             }]);
         }
@@ -97,7 +97,7 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                 choices: [],
                 answer: '',
                 description: '',
-                autoGrade: 'Auto Grade',
+                autoGrade: 'yes',
                 saved: false,
             }]);
         }
@@ -161,6 +161,7 @@ export default function CreateTestForm({ userID }: { userID: number }) {
 
         if (lastQuestion && newChoices) {
             const allQuestions = getValues('questions');
+            lastQuestion.choices = newChoices;
             allQuestions[index] = lastQuestion;
             setValue('questions', allQuestions);
         }
@@ -261,7 +262,7 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                 <Modal show={openQuestionModal} onClose={() => handleRemoveQuestion(getLastQuestionIndex())}>
                     <Modal.Header>New Question</Modal.Header>
                     <Modal.Body>
-                        <div className="space-y-6">
+                        <div className="space-y-4">
                             <FieldWrapper>
                                 <Input
                                     register={register}
@@ -301,11 +302,13 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                                 <RadioGroup
                                     layout="vertical"
                                     legend="Question Type"
+                                    required
                                 >
                                     <Radio
                                         register={register}
                                         id="multiple-choice-radio"
                                         label="Multiple Choice"
+                                        value="Multiple Choice"
                                         name={`questions.${getLastQuestionIndex()}.type`}
                                         className='mb-2'
                                         required={true}
@@ -314,6 +317,7 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                                         register={register}
                                         id="true-false-radio"
                                         label="True False"
+                                        value="True False"
                                         name={`questions.${getLastQuestionIndex()}.type`}
                                         className='mb-2'
                                         required={true}
@@ -322,6 +326,7 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                                         register={register}
                                         id="short-answer-radio"
                                         label="Short Answer"
+                                        value="Short Answer"
                                         name={`questions.${getLastQuestionIndex()}.type`}
                                         className='mb-2'
                                         required={true}
@@ -330,6 +335,7 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                                         register={register}
                                         id="essay-radio"
                                         label="Essay"
+                                        value="Essay"
                                         name={`questions.${getLastQuestionIndex()}.type`}
                                         className='mb-2'
                                         required={true}
@@ -345,7 +351,8 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                             {
                                 (getLastQuestion()?.choices?.length ?? 0) > 0 && getLastQuestion()?.type === 'Multiple Choice' &&
                                     getLastQuestion()?.choices.map((choice, index) => (
-                                        <div className='flex gap-3' key={choice.id}>
+                                        <div className='flex items-center gap-3' key={choice.id}>
+                                            <span>{index + 1}</span>
                                             <Input
                                                 register={register}
                                                 label={`Choice ${index + 1}`}
@@ -388,6 +395,7 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                                             register={register}
                                             id={`auto-grade`}
                                             label="Auto Grade"
+                                            value="yes"
                                             name={`questions.${getLastQuestionIndex()}.autoGrade`}
                                         />
                                     </CheckboxGroup>
