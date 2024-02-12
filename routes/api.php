@@ -24,3 +24,4 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 Route::middleware('auth:sanctum')->get('/user/tests', [TestController::class, 'indexForUser'])->name('user.tests');
+Route::middleware('auth:sanctum')->get('/tests/{id}', [TestController::class, 'show'])->name('user.test.show');

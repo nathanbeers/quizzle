@@ -43,6 +43,7 @@ export interface Test {
     user_id: number;
     created_at: string;
     updated_at: string;
+    close_date: Date;
     tags: string[];
     questions: QuestionForm[];
 }
