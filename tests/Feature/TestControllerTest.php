@@ -62,12 +62,33 @@ class TestControllerTest extends TestCase
     public function test_store_creates_a_new_test()
     {
         $user = User::factory()->create();
+        $tags = ['tag1', 'tag2'];
+        $validQuestions = json_encode([
+            [
+                "question_id" => "q1",
+                "title" => "Sample Question",
+                "description" => "Sample Description",
+                "autoGrade" => "true",
+                "choices" => [
+                    ["id" => "c1", "text" => "Choice 1"],
+                    ["id" => "c2", "text" => "Choice 2"]
+                ],
+                "trueFalseChoices" => [
+                    ["id" => "tf1", "text" => "True"],
+                    ["id" => "tf2", "text" => "False"]
+                ],
+                "saved" => true,
+                "type" => "Multiple Choice",
+                "answer" => "c1"
+            ]
+        ]);
+
         $testData = [
             'title' => 'Assumenda nesciunt rerum necessitatibus commodi harum sunt aut.',
             'description' => 'Enim nemo magnam atque sapiente. Delectus explicabo deleniti in aliquid odit quisquam culpa.',
-            'questions' => json_encode(['Q1', 'Q2']),
+            'questions' => $validQuestions,
             'user_id' => $user->id,
-            'tags' => json_encode(['tag1', 'tag2']),
+            'tags' => json_encode($tags),
             'close_date' => now()->toDateString(),
         ];
 
@@ -85,12 +106,13 @@ class TestControllerTest extends TestCase
                     'id', 'title', 'description', 'questions', 'user_id', 'tags', 'close_date', 'created_at', 'updated_at'
                 ]);
 
-        // Assert: Check if the response contains the expected data for the JSON data
-        $decodedResponse = json_decode($response->getContent(), true);
-
-        // Assert the decoded structure
-        $this->assertEquals(['Q1', 'Q2'], json_decode($decodedResponse['questions'], true));
-        $this->assertEquals(['tag1', 'tag2'], json_decode($decodedResponse['tags'], true));
+        // Assert that tags are saved correctly
+        foreach ($tags as $tag) {
+            $this->assertDatabaseHas('tags', [
+                'name' => $tag,
+                'user_id' => $user->id
+            ]);
+        }
 
         // Assert: These 3 fields must exist in the database for a test to be created successfully
         $this->assertDatabaseHas('tests', [
@@ -99,6 +121,39 @@ class TestControllerTest extends TestCase
             'user_id' => $testData['user_id'],
         ]);
     }
+
+    public function test_store_rejects_invalid_questions_structure()
+    {
+        $user = User::factory()->create();
+        $invalidQuestions = json_encode([
+            [
+                "question_id" => "q1",
+                // Missing title, and autoGrade, choices, trueFalseChoices, type, and answer fields
+            ]
+        ]);
+
+        $testData = [
+            'title' => 'Invalid Questions Test',
+            'description' => 'Test with invalid questions structure.',
+            'questions' => $invalidQuestions,
+            'user_id' => $user->id,
+            'tags' => json_encode(['tag1', 'tag2']),
+            'close_date' => now()->toDateString(),
+        ];
+
+        $response = $this->actingAs($user, 'sanctum')->postJson('/api/tests', $testData);
+
+        // Assert that the response has a 422 status and contains the expected error structure
+        $response->assertStatus(422)
+                ->assertJson([
+                    'error' => 'Invalid questions structure',
+                ])
+                ->assertJsonStructure([
+                    'error',
+                    'messages'
+                ]);
+    }
+
 
     public function test_show_returns_a_specific_test()
     {

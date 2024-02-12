@@ -1,24 +1,28 @@
 import { useState, useEffect } from 'react';
-import { useForm, SubmitHandler, useFieldArray } from "react-hook-form"
+import { useForm, SubmitHandler, useFieldArray, Controller, set } from "react-hook-form"
 import Button from '@/Components/ui/Button';
 import Input from '@/Components/ui/Input';
 import FieldWrapper from '@/Components/ui/FieldWrapper';
 import Loading from '@/Components/ui/Loading';
 import axios from 'axios';
 import Textarea from '@/Components/ui/Textarea';
-import { Modal, Card, Tooltip } from 'flowbite-react';
+import { Modal, Datepicker, Tooltip } from 'flowbite-react';
 import type { QuestionForm } from '@/types/test';
 import { extractStringValues } from '@/helpers';
 import { v4 as uuidv4 } from 'uuid';
 import { RadioGroup, Radio } from '@/Components/ui/RadioGroup';
 import { CheckboxGroup, Checkbox} from '@/Components/ui/CheckboxGroup';
 import QuestionCircle from '@/Components/ui/icons/QuestionCircle';
+import Select from '@/Components/ui/Select';
+import Trashcan from '@/Components/ui/icons/Trashcan';
+import clsx from 'clsx';
 
 type Inputs = {
   title: string;
   description: string;
   tags: { tag: string }[];
   questions: QuestionForm[];
+  close_date: Date;
 }
 
 export default function CreateTestForm({ userID }: { userID: number }) {
@@ -45,9 +49,21 @@ export default function CreateTestForm({ userID }: { userID: number }) {
     const watchQuestionField = watch('questions');
 
     useEffect(() => {
-        const subscription = watch((value, { name, type }) =>
+        const subscription = watch((value, { name, type }) => {
             console.log(value, name, type)
-        )
+            if (typeof type === 'string' && type.includes('.answer')) {
+
+                //reset answer for last question
+                const questions = getValues('questions');
+
+                if (questions?.length > 0) {
+                    const updatedQuestions = [...questions];
+                    updatedQuestions[updatedQuestions.length -1].answer = '';
+                    setValue('questions', updatedQuestions, { shouldValidate: true });
+                }
+            }
+
+        })
         return () => subscription.unsubscribe()
     }, [watchQuestionField])
 
@@ -57,7 +73,8 @@ export default function CreateTestForm({ userID }: { userID: number }) {
         const formData = {
             ...data,
             user_id: userID,
-            tags: JSON.stringify(tags)
+            tags: JSON.stringify(tags),
+            questions: JSON.stringify(data.questions),
         }
 
         console.log(formData);
@@ -76,31 +93,25 @@ export default function CreateTestForm({ userID }: { userID: number }) {
     }
 
     const handleAddQuestion = () => {
-        console.log(getValues('questions'));
+        const newQuestionObj: QuestionForm = {
+            question_id: `${userID}${uuidv4()}`,
+            title: '',
+            type: 'Multiple Choice',
+            choices: [],
+            trueFalseChoices: [{ id: uuidv4(), text: 'True' }, { id: uuidv4(), text: 'False' }],
+            answer: '',
+            description: '',
+            autoGrade: 'yes',
+            saved: false,
+        };
+
         if (getValues('questions')) {
-            setValue('questions', [...getValues('questions'), {
-                question_id: `${userID}${uuidv4()}`,
-                title: '',
-                type: 'Multiple Choice',
-                choices: [],
-                answer: '',
-                description: '',
-                autoGrade: 'yes',
-                saved: false,
-            }]);
+            setValue('questions', [...getValues('questions'), newQuestionObj]);
         }
         else {
-            setValue('questions', [{
-                question_id: `${userID}${uuidv4()}`,
-                title: '',
-                type: 'Multiple Choice',
-                choices: [],
-                answer: '',
-                description: '',
-                autoGrade: 'yes',
-                saved: false,
-            }]);
+            setValue('questions', [newQuestionObj]);
         }
+
         setopenQuestionModal(true);
     };
 
@@ -140,6 +151,16 @@ export default function CreateTestForm({ userID }: { userID: number }) {
 
         if (question.type === 'Multiple Choice' && !question.answer) {
             setquestionFormErrors(['Multiple Choice question must have a correct answer']);
+
+            return false;
+        }
+
+        if (
+            (question.type === 'True False' || question.type === 'Multiple Choice')
+            && question.autoGrade
+            && !question.answer
+        ) {
+            setquestionFormErrors(['Must provide an answer when auto grading is enabled']);
 
             return false;
         }
@@ -203,29 +224,63 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                 <Textarea
                     register={register}
                     label="Description (optional)"
-                    placeholder="Test Description"
+                    placeholder="Write a short description about your test"
                     name="description"
                     id="description"
                 />
             </FieldWrapper>
 
             <FieldWrapper>
+                <label
+                    htmlFor="test-date"
+                    className='block text-sm font text-gray-900 dark:text-white font-bold'
+                >
+                    Test End Date<span className="text-red-500">*</span>
+                </label>
+                <Controller
+                    name="close_date"
+                    control={control}
+                    render={({ field }) => (
+                        <Datepicker
+                            id="test-date"
+                            name="test_date"
+                            onSelectedDateChanged={(date) => {
+                                field.onChange(date)
+                            }}
+                            minDate={new Date()}
+                            required
+                        />
+                    )}
+                />
+            </FieldWrapper>
+
+            <FieldWrapper>
                 <fieldset className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                     <legend>Tags (optional)</legend>
-                    <small className='mb-4'><em>Adding tags to your test can help you sort/filter tests.</em></small>
-                    <ul>
+                    <p className='mb-0'><small><em>Adding tags to your test can help you sort/filter tests later.</em></small></p>
+                    <ul className={clsx(
+                        'flex gap-4 flex-wrap',
+                        fields.length > 0 && 'my-3'
+                    )}>
                         {fields.map((field, index) => (
                             <li key={field.id} className="flex items-center gap-2">
                                 <Input
                                     register={register}
-                                    label={`Tag ${index + 1}`}
+                                    label={`${index + 1}.`}
+                                    labelPosition='left'
                                     id={`tag-${index}`}
                                     name={`tags.${index}.tag`}
                                     placeholder="Enter a tag"
                                     type="text"
                                 />
-                                <Button type="button" color="red" onClick={() => remove(index)}>
-                                    Remove
+                                <Button
+                                    type="button"
+                                    color="red"
+                                    size='lg'
+                                    onClick={() => remove(index)}
+                                    aria-label='Remove Tag'
+                                >
+                                    <Trashcan height={16} color='white' />
                                 </Button>
                             </li>
                         ))}
@@ -237,20 +292,27 @@ export default function CreateTestForm({ userID }: { userID: number }) {
             </FieldWrapper>
 
             <FieldWrapper>
-                <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Questions</label>
+                <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                    Questions<span className="text-red-500">*</span>
+                </label>
                 {getValues('questions')?.map((question, index) => (
 
                     <div key={question.question_id} className="flex items-center gap-2">
                         {
                             question.saved &&
                                 <>
-                                    <Card href="#" className="max-w-sm">
-                                        <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+                                    <button className="max-w-sm">
+                                        <h5 className="font-bold tracking-tight text-gray-900 dark:text-white">
                                             {question.title}
                                         </h5>
-                                    </Card>
-                                    <Button type="button" color="red" onClick={() => handleRemoveQuestion(index)}>
-                                        Remove
+                                    </button>
+                                    <Button
+                                        type="button"
+                                        color="red"
+                                        onClick={() => handleRemoveQuestion(index)}
+                                        aria-label='Remove Question'
+                                    >
+                                        <Trashcan height={16} color='white' />
                                     </Button>
                                 </>
                         }
@@ -298,73 +360,107 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                                     ))
                             }
 
-                            <FieldWrapper>
-                                <RadioGroup
-                                    layout="vertical"
-                                    legend="Question Type"
-                                    required
-                                >
-                                    <Radio
-                                        register={register}
-                                        id="multiple-choice-radio"
-                                        label="Multiple Choice"
-                                        value="Multiple Choice"
-                                        name={`questions.${getLastQuestionIndex()}.type`}
-                                        className='mb-2'
-                                        required={true}
-                                    />
-                                    <Radio
-                                        register={register}
-                                        id="true-false-radio"
-                                        label="True False"
-                                        value="True False"
-                                        name={`questions.${getLastQuestionIndex()}.type`}
-                                        className='mb-2'
-                                        required={true}
-                                    />
-                                    <Radio
-                                        register={register}
-                                        id="short-answer-radio"
-                                        label="Short Answer"
-                                        value="Short Answer"
-                                        name={`questions.${getLastQuestionIndex()}.type`}
-                                        className='mb-2'
-                                        required={true}
-                                    />
-                                    <Radio
-                                        register={register}
-                                        id="essay-radio"
-                                        label="Essay"
-                                        value="Essay"
-                                        name={`questions.${getLastQuestionIndex()}.type`}
-                                        className='mb-2'
-                                        required={true}
-                                    />
-                                </RadioGroup>
-                            </FieldWrapper>
+                            <div className="flex gap-16 flex-wrap">
+                                <FieldWrapper>
+                                    <RadioGroup
+                                        layout="vertical"
+                                        legend="Question Type"
+                                        required
+                                    >
+                                        <Radio
+                                            register={register}
+                                            id="multiple-choice-radio"
+                                            label="Multiple Choice"
+                                            value="Multiple Choice"
+                                            name={`questions.${getLastQuestionIndex()}.type`}
+                                            className='mb-2'
+                                            required={true}
+                                        />
+                                        <Radio
+                                            register={register}
+                                            id="true-false-radio"
+                                            label="True False"
+                                            value="True False"
+                                            name={`questions.${getLastQuestionIndex()}.type`}
+                                            className='mb-2'
+                                            required={true}
+                                        />
+                                        <Radio
+                                            register={register}
+                                            id="short-answer-radio"
+                                            label="Short Answer"
+                                            value="Short Answer"
+                                            name={`questions.${getLastQuestionIndex()}.type`}
+                                            className='mb-2'
+                                            required={true}
+                                        />
+                                        <Radio
+                                            register={register}
+                                            id="essay-radio"
+                                            label="Essay"
+                                            value="Essay"
+                                            name={`questions.${getLastQuestionIndex()}.type`}
+                                            className='mb-2'
+                                            required={true}
+                                        />
+                                    </RadioGroup>
+                                </FieldWrapper>
+
+                                {
+                                    (getLastQuestion()?.type === 'Multiple Choice' || getLastQuestion()?.type === 'True False') &&
+                                        <FieldWrapper>
+                                            <CheckboxGroup
+                                                legend={
+                                                    <div className='flex items-center gap-2'>
+                                                        <span>Auto Grade Question</span>
+                                                        <Tooltip content="If checked, Quizzle will automatically grade this question for you.">
+                                                            <QuestionCircle height={16} color='#111827' />
+                                                        </Tooltip>
+                                                    </div>
+                                                }
+                                                layout='vertical'
+                                                className='mb-2'
+                                            >
+                                                <Checkbox
+                                                    register={register}
+                                                    id={`auto-grade`}
+                                                    label="Auto Grade"
+                                                    value="yes"
+                                                    name={`questions.${getLastQuestionIndex()}.autoGrade`}
+                                                />
+                                            </CheckboxGroup>
+                                        </FieldWrapper>
+                                }
+                            </div>
 
                             {
                                 (getLastQuestion()?.choices?.length ?? 0) > 0 && getLastQuestion()?.type === 'Multiple Choice' &&
-                                    <p className="font-bold !-mb-3">Choices</p>
+                                    <label className="font-bold !-mb-3">Choices (minimum 2)</label>
                             }
 
                             {
                                 (getLastQuestion()?.choices?.length ?? 0) > 0 && getLastQuestion()?.type === 'Multiple Choice' &&
                                     getLastQuestion()?.choices.map((choice, index) => (
                                         <div className='flex items-center gap-3' key={choice.id}>
-                                            <span>{index + 1}</span>
                                             <Input
                                                 register={register}
-                                                label={`Choice ${index + 1}`}
+                                                label={`${index + 1}.`}
                                                 id={`choice-${index}`}
                                                 name={`questions.${getLastQuestionIndex()}.choices.${index}.text`}
                                                 placeholder="Enter choice"
                                                 type="text"
                                                 aria-label={`Choice ${index + 1}`}
-                                                hideLabel={true}
+                                                labelPosition={'left'}
+                                                wrapperClass="flex-grow"
                                             />
-                                            <Button type="button" size="lg" color="red" onClick={() => handleRemoveChoice(index)}>
-                                                Remove
+                                            <Button
+                                                type="button"
+                                                size="lg"
+                                                color="red"
+                                                onClick={() => handleRemoveChoice(index)}
+                                                aria-label='Remove Choice'
+                                            >
+                                                <Trashcan height={16} color='white' />
                                             </Button>
                                         </div>
                                     ))
@@ -378,27 +474,33 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                             }
 
                             {
-                                (getLastQuestion()?.type === 'Multiple Choice' || getLastQuestion()?.type === 'True False') &&
-                                    <CheckboxGroup
-                                        legend={
-                                            <div className='flex items-center gap-2'>
-                                                <span>Auto Grade Question</span>
-                                                <Tooltip content="If checked, Quizzle will grade this question for you.">
-                                                    <QuestionCircle height={16} color='#111827' />
-                                                </Tooltip>
-                                            </div>
-                                        }
-                                        layout='vertical'
-                                        className='mb-2'
-                                    >
-                                        <Checkbox
+                                getLastQuestion()?.type === 'Multiple Choice' && (getLastQuestion()?.choices?.length ?? 0) > 0 &&
+                                    <FieldWrapper>
+                                        <Select
                                             register={register}
-                                            id={`auto-grade`}
-                                            label="Auto Grade"
-                                            value="yes"
-                                            name={`questions.${getLastQuestionIndex()}.autoGrade`}
+                                            label="Correct Answer"
+                                            name={`questions.${getLastQuestionIndex()}.answer`}
+                                            options={
+                                                getLastQuestion()?.choices?.map((choice) => ({ label: choice.text, value: choice.text })) ?? []
+                                            }
+                                            required
                                         />
-                                    </CheckboxGroup>
+                                    </FieldWrapper>
+                            }
+
+                            {
+                                getLastQuestion()?.type === 'True False' && getLastQuestion()?.trueFalseChoices.length &&
+                                    <FieldWrapper>
+                                        <Select
+                                            register={register}
+                                            label="Correct Answer"
+                                            name={`questions.${getLastQuestionIndex()}.answer`}
+                                            options={
+                                                getLastQuestion()?.trueFalseChoices?.map((choice) => ({ label: choice.text, value: choice.text })) ?? []
+                                            }
+                                            required
+                                        />
+                                    </FieldWrapper>
                             }
 
                         </div>
@@ -424,7 +526,7 @@ export default function CreateTestForm({ userID }: { userID: number }) {
             </FieldWrapper>
 
             <FieldWrapper>
-                <Button type="submit" color="green">Save Test</Button>
+                <Button type="submit" color="green" className='mt-6'>Save Test</Button>
             </FieldWrapper>
         </form>
     );

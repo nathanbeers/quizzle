@@ -35,13 +35,30 @@ class TestController extends Controller
             'description' => 'nullable|string',
             'questions' => 'required|json',
             'user_id' => 'required|integer',
-            'tags' => 'required|json',
-            'close_date' => 'nullable|date',
+            'tags' => 'nullable|json',
+            'close_date' => 'date',
         ]);
+
+        // validate questions json
+        $questions = json_decode($request->input('questions'), true);
+        if (is_null($questions)) {
+            return response()->json(['error' => 'Invalid JSON for questions'], 422);
+        }
+
+        $questionValidationErrors = Test::validateQuestions($questions);
+        if (!empty($questionValidationErrors)) {
+            return response()->json(['error' => 'Invalid questions structure', 'messages' => $questionValidationErrors], 422);
+        }
+
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 400);
         }
+
+        // save unqiue tags for user
+        $user = Auth::user();
+        $tags = json_decode($request->tags);
+        $tagIds = Test::saveUserTags($tags, $user);
 
         try {
             $test = Test::create($request->all());

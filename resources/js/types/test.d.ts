@@ -18,7 +18,8 @@ type BaseQuestionForm = {
     title: string;
     description?: string;
     autoGrade: string;
-    choices: any[];
+    choices: {id: string, text: string}[];
+    trueFalseChoices: {id: string, text: 'True' | 'False'}[];
     saved: boolean;
 };
 

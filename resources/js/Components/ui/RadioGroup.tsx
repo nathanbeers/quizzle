@@ -1,13 +1,14 @@
-import { ReactNode } from "react";
+import { ReactNode, InputHTMLAttributes } from "react";
 import { UseFormRegister } from "react-hook-form"
 import clsx from "clsx";
 
-interface RadioProps {
+interface RadioProps extends InputHTMLAttributes<HTMLInputElement>{
     id: string;
     label: string;
     name: string;
     value: string;
     register: UseFormRegister<any>;
+    onChange?: (...args: any) => void;
     className?: string;
     required?: boolean;
 }
@@ -21,7 +22,7 @@ interface RadioGroupProps {
     legend: string | ReactNode;
 }
 
-const Radio = ({ id, label, name, register, value, required = false, className = '', ...props }: RadioProps) => (
+const Radio = ({ id, label, name, register, value, required = false, className = '', onChange, ...props }: RadioProps) => (
     <div className={`flex items-center ${className}`}>
         <input
             {...register(name, { required })}
