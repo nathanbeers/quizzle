@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
 
 class TestController extends Controller
 {
@@ -38,6 +39,7 @@ class TestController extends Controller
             'user_id' => 'required|integer',
             'tags' => 'nullable|json',
             'close_date' => 'date',
+            'password' => 'nullable|string',
         ]);
 
         // validate questions json
@@ -55,13 +57,21 @@ class TestController extends Controller
             return response()->json($validator->errors(), 400);
         }
 
-        // save unqiue tags for user
-        $user = Auth::user();
-        $tags = json_decode($request->tags);
-        $tagIds = Test::saveUserTags($tags, $user);
+        $data = $request->all();
+
+        // Check if a test password was provided and hash it
+        if (!empty($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        }
 
         try {
-            $test = Test::create($request->all());
+            // save test
+            $test = Test::create($data);
+            // save unqiue tags for user
+            $user = Auth::user();
+            $tags = json_decode($request->tags);
+            $tagIds = Test::saveUserTags($tags, $user);
+
             return response()->json($test, 201);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Failed to create test', 'message' => $e->getMessage()], 500);
@@ -129,4 +139,21 @@ class TestController extends Controller
             return response()->json(['error' => 'Failed to delete test', 'message' => $e->getMessage()], 500);
         }
     }
+
+    public function verifyPassword(Request $request)
+    {
+        $request->validate([
+            'test_id' => 'required|exists:tests,id',
+            'password' => 'required|string',
+        ]);
+
+        $test = Test::find($request->test_id);
+
+        if ($test && Hash::check($request->password, $test->password)) {
+            return response()->json(['message' => 'Password verified successfully.'], 200);
+        }
+
+        return response()->json(['error' => 'Password verification failed.'], 401);
+    }
+
 }

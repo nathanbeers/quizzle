@@ -83,6 +83,7 @@ export default function CreateTestForm({ userID }: { userID: number }) {
             user_id: userID,
             tags: JSON.stringify(tags),
             questions: JSON.stringify(data.questions),
+            hasPassword: !!data.password,
         }
 
         console.log(formData);
@@ -245,7 +246,6 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                     type='password'
                     id='password'
                     name='password'
-                    required
                 />
             </FieldWrapper>
 

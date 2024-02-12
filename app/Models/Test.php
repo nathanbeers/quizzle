@@ -20,12 +20,18 @@ class Test extends Model
         'user_id',
         'tags',
         'close_date',
+        'password',
+        'hasPassword',
     ];
 
     protected $casts = [
         'questions' => 'array',
         'tags' => 'array',
         'close_date' => 'datetime',
+    ];
+
+    protected $hidden = [
+        'password',
     ];
 
     public $incrementing = false;
