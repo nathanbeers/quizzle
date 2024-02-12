@@ -50,7 +50,6 @@ class TestController extends Controller
             return response()->json(['error' => 'Invalid questions structure', 'messages' => $questionValidationErrors], 422);
         }
 
-
         if ($validator->fails()) {
             return response()->json($validator->errors(), 400);
         }
@@ -87,9 +86,20 @@ class TestController extends Controller
             'description' => 'sometimes|nullable|string',
             'questions' => 'sometimes|required|json',
             'user_id' => 'sometimes|required|integer',
-            'tags' => 'sometimes|required|json',
+            'tags' => 'sometimes|nullable|json',
             'close_date' => 'nullable|date',
         ]);
+
+        // validate questions json
+        $questions = json_decode($request->input('questions'), true);
+        if (is_null($questions)) {
+            return response()->json(['error' => 'Invalid JSON for questions'], 422);
+        }
+
+        $questionValidationErrors = Test::validateQuestions($questions);
+        if (!empty($questionValidationErrors)) {
+            return response()->json(['error' => 'Invalid questions structure', 'messages' => $questionValidationErrors], 422);
+        }
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 400);

@@ -6,7 +6,7 @@ import FieldWrapper from '@/Components/ui/FieldWrapper';
 import Loading from '@/Components/ui/Loading';
 import axios from 'axios';
 import Textarea from '@/Components/ui/Textarea';
-import { Modal, Datepicker, Tooltip } from 'flowbite-react';
+import { Modal, Datepicker, Tooltip, Toast } from 'flowbite-react';
 import type { QuestionForm } from '@/types/test';
 import { extractStringValues } from '@/helpers';
 import { v4 as uuidv4 } from 'uuid';
@@ -69,7 +69,14 @@ export default function CreateTestForm({ userID }: { userID: number }) {
 
     const onSubmit: SubmitHandler<Inputs> = async (data) => {
         setIsLoading(true);
-        const tags = data.tags.filter(tag => !!tag.tag)
+        const tags = data.tags
+                            .filter(tag => !!tag.tag)
+                            .reduce<string[]>((acc, tag) => {
+                                if (tag.tag) {
+                                    acc.push(tag.tag);
+                                }
+                                return acc;
+                            }, []);
         const formData = {
             ...data,
             user_id: userID,
