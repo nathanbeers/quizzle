@@ -1,17 +1,18 @@
-export interface QuestionResponse {
-    id: number;
+export interface Question {
     question_id: string;
-    test_id?: number;
-    user_id: number;
-    created_at: string;
-    updated_at: string;
     title: string;
-    type: 'Multiple Choice' | 'Short Answer' | 'True False' | 'Essay';
-    description?: string;
+    type: QuestionTypes;
+    choices: {id: string, text: string}[];
+    trueFalseChoices: {id: string, text: string}[];
+    answer: string;
+    description: string;
     autoGrade: string;
-    answer?: string;
-    choices?: any[];
+    saved?: boolean;
+    test_id?: number;
+    user_id?: number;
 }
+
+type QuestionTypes = 'Multiple Choice' | 'Short Answer' | 'True False' | 'Essay';
 
 type BaseQuestionForm = {
     question_id: string;

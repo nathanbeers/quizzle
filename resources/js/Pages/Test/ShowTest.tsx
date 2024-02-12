@@ -2,20 +2,28 @@ import { useEffect, useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, usePage } from '@inertiajs/react';
 import { PageProps } from '@/types';
-import type { Test } from '@/types/test';
-import Button from '@/Components/ui/Button';
-import Input from '@/Components/ui/Input';
-import FieldWrapper from '@/Components/ui/FieldWrapper';
-import Loading from '@/Components/ui/Loading';
+import type { Test, Question, QuestionTypes } from '@/types/test';
+import { Button, Input, FieldWrapper, Loading } from '@/Components/ui';
 import axios from '@/lib/axios';
-import { useForm, SubmitHandler, set } from 'react-hook-form';
+import { useForm, SubmitHandler } from 'react-hook-form';
+import MultipleChoice from '@/Components/Question/MultipleChoice';
+import Textarea from '@/Components/ui/Textarea';
 
 type Inputs = {
     password: string;
 };
 
+const order: QuestionTypes[] = ['Multiple Choice', 'True False', 'Short Answer', 'Essay'];
+
+const sortQuestions = (questions: Question[]): Question[] => {
+  return questions.sort((a, b) => {
+    return order.indexOf(a.type) - order.indexOf(b.type);
+  });
+};
+
 export default function ShowTest() {
     const [test, setTest] = useState<Test>({} as Test);
+    const [questions, setQuestions] = useState<Question[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [passwordError, setPasswordError] = useState<string>('');
     const [showPasswordForm, setShowPasswordForm] = useState<boolean>(false);
@@ -53,12 +61,17 @@ export default function ShowTest() {
         const fetchTest = async () => {
             try {
                 const response = await axios.get(route('tests.show', { id: testId }));
+                const { data } = response;
+                const { questions, hasPassword, } = data;
 
-                if (response.data.hasPassword) {
+                console.log(JSON.parse(questions));
+
+                if (hasPassword) {
                     setShowPasswordForm(true);
                 }
 
                 setTest(response.data);
+                setQuestions(sortQuestions(JSON.parse(questions)));
             } catch (error) {
                 console.error('There was an error fetching the test:', error);
                 setError('Failed to load test.');
@@ -73,7 +86,7 @@ export default function ShowTest() {
     return (
         <AuthenticatedLayout
             user={user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Tests</h2>}
+            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">{test?.title}</h2>}
         >
             <Head title="Test" />
 
@@ -102,15 +115,43 @@ export default function ShowTest() {
                             </FieldWrapper>
                         </form>
                     ) : (
-                        <div>
-                            {test?.id ? (
-                                <ul>
-                                    <li>{test.title}</li>
-                                </ul>
-                            ) : (
-                                <div>No test found.</div>
-                            )}
-                        </div>
+                        <>
+                            {questions.map((question: any, index: number) => (
+                                <div key={index} className="mb-6">
+
+                                    {question.type === 'Multiple Choice'  || question.type === 'True False' ? (
+                                        <MultipleChoice
+                                            choices={question.type === 'Multiple Choice' ? question.choices : question.trueFalseChoices}
+                                            question={question.title}
+                                            questionIndex={index}
+                                            register={register}
+                                        />
+                                    ) : question.type === 'Short Answer' ? (
+                                        <FieldWrapper>
+                                            <Input
+                                                label={`${index + 1}. ${question.title}`}
+                                                id={`questions.${index}.answer`}
+                                                name={`questions.${index}.answer`}
+                                                value={question.answer}
+                                                register={register}
+                                                required
+                                            />
+                                        </FieldWrapper>
+                                    ) : (
+                                        <FieldWrapper>
+                                            <Textarea
+                                                label={`${index + 1}. ${question.title}`}
+                                                id={`questions.${index}.answer`}
+                                                name={`questions.${index}.answer`}
+                                                register={register}
+                                                required
+                                            />
+                                        </FieldWrapper>
+                                    )}
+
+                                </div>
+                            ))}
+                        </>
                     )}
                 </div>
             </div>
