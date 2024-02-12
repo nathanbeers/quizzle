@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, usePage } from '@inertiajs/react';
+import { Head, usePage, Link } from '@inertiajs/react';
 import { PageProps } from '@/types';
 import type { Test } from '@/types/test';
 import axios from '@/lib/axios';
+import { Card } from 'flowbite-react';
+import { truncateString } from '@/helpers';
 
 export default function ShowAllTests() {
     const [tests, setTests] = useState<Test[]>([]);
@@ -31,7 +33,7 @@ export default function ShowAllTests() {
     return (
         <AuthenticatedLayout
             user={user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Tests</h2>}
+            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">All Tests</h2>}
         >
             <Head title="All Tests" />
 
@@ -44,13 +46,33 @@ export default function ShowAllTests() {
                     ) : (
                         <div>
                             {tests.length > 0 ? (
-                                <ul>
+                                <div className='grid gird-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4'>
                                     {tests.map((test) => (
-                                        <li key={test.id}>{test.title}</li>
+                                        <Link key={test.id} href={route('user.test.show', {id: test.id})}>
+                                            <Card className="max-w-sm">
+                                                <h5 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
+                                                    {test.title}
+                                                </h5>
+                                                { JSON.parse(test.tags)?.length > 0 && (
+                                                    <div className='flex gap-2 flex-wrap'>
+                                                        {JSON.parse(test.tags).map((tag: string, index: number) => (
+                                                            <span key={index} className="inline-block bg-gray-200 rounded-full px-3 py-1 text-xs font-semibold text-gray-700">
+                                                                {tag}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                {test.description && (
+                                                    <p className="mt-2 text-gray-700 dark:text-gray-400">
+                                                        {truncateString(test.description, 100)}
+                                                    </p>
+                                                )}
+                                            </Card>
+                                        </Link>
                                     ))}
-                                </ul>
+                                </div>
                             ) : (
-                                <div>No tests found.</div>
+                                <div>You haven't created any tests yet. <Link href={route('user.test.create')}>Create a test</Link> now.</div>
                             )}
                         </div>
                     )}

@@ -20,6 +20,7 @@ import clsx from 'clsx';
 type Inputs = {
   title: string;
   description: string;
+  password: string;
   tags: { tag: string }[];
   questions: QuestionForm[];
   close_date: Date;
@@ -234,6 +235,17 @@ export default function CreateTestForm({ userID }: { userID: number }) {
                     placeholder="Write a short description about your test"
                     name="description"
                     id="description"
+                />
+            </FieldWrapper>
+
+            <FieldWrapper>
+                <Input
+                    register={register}
+                    label='Access Password (optional)'
+                    type='password'
+                    id='password'
+                    name='password'
+                    required
                 />
             </FieldWrapper>
 

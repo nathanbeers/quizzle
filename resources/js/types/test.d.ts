@@ -40,10 +40,11 @@ export interface Test {
     id: number;
     title: string;
     description?: string;
+    password?: string;
     user_id: number;
     created_at: string;
     updated_at: string;
     close_date: Date;
-    tags: string[];
-    questions: QuestionForm[];
+    tags: string;
+    questions: string;
 }
