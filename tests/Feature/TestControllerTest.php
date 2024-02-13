@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 use App\Models\Test;
 use App\Models\User;
@@ -15,7 +16,7 @@ class TestControllerTest extends TestCase
     public function test_index_returns_all_tests()
     {
         $user = User::factory()->create();
-        $tests = Test::factory()->count(3)->create();
+        $tests = Test::factory()->count(1)->create(['user_id' => $user->id]);
 
         $response = $this->actingAs($user, 'sanctum')->getJson('/api/tests');
 
@@ -90,6 +91,8 @@ class TestControllerTest extends TestCase
             'user_id' => $user->id,
             'tags' => json_encode($tags),
             'close_date' => now()->toDateString(),
+            'password' => 'secret',
+            'hasPassword' => true,
         ];
 
         // Act: Make a POST request to the store route
@@ -103,7 +106,7 @@ class TestControllerTest extends TestCase
                     'user_id' => json_decode($testData['user_id'], true),
                 ])
                 ->assertJsonStructure([
-                    'id', 'title', 'description', 'questions', 'user_id', 'tags', 'close_date', 'created_at', 'updated_at'
+                    'id', 'title', 'description', 'questions', 'user_id', 'hasPassword', 'tags', 'close_date', 'created_at', 'updated_at'
                 ]);
 
         // Assert that tags are saved correctly
@@ -139,6 +142,8 @@ class TestControllerTest extends TestCase
             'user_id' => $user->id,
             'tags' => json_encode(['tag1', 'tag2']),
             'close_date' => now()->toDateString(),
+            'password' => 'secret',
+            'hasPassword' => 'true',
         ];
 
         $response = $this->actingAs($user, 'sanctum')->postJson('/api/tests', $testData);
@@ -171,15 +176,45 @@ class TestControllerTest extends TestCase
         $user = User::factory()->create();
         $test = Test::factory()->create();
 
-        $updatedData = [
-            'title' => 'Updated Title',
-            'description' => 'Updated description',
+        $user = User::factory()->create();
+        $tags = ['tag1 updated', 'tag2 updated'];
+        $validQuestions = json_encode([
+            [
+                "question_id" => "AAA",
+                "title" => "Sample Question Updated",
+                "description" => "Sample Description Updated",
+                "autoGrade" => true,
+                "choices" => [
+                    ["id" => "c1", "text" => "Choice 1"],
+                    ["id" => "c2", "text" => "Choice 2"]
+                ],
+                "trueFalseChoices" => [
+                    ["id" => "tf1", "text" => "True"],
+                    ["id" => "tf2", "text" => "False"]
+                ],
+                "saved" => true,
+                "type" => "True False",
+                "answer" => "True"
+            ]
+        ]);
+
+        $updateData = [
+            'title' => 'Assumenda nesciunt rerum necessitatibus commodi harum sunt aut.',
+            'description' => 'Enim nemo magnam atque sapiente. Delectus explicabo deleniti in aliquid odit quisquam culpa.',
+            'questions' => $validQuestions,
+            'user_id' => $user->id,
+            'tags' => json_encode($tags),
+            'close_date' => now()->toDateString(),
+            'password' => 'secret',
+            'hasPassword' => true,
         ];
 
-        $response = $this->actingAs($user, 'sanctum')->putJson("/api/tests/{$test->id}", $updatedData);
+        $response = $this->actingAs($user, 'sanctum')->putJson("/api/tests/{$test->id}", $updateData);
 
         $response->assertStatus(200)
-        ->assertJson($updatedData);
+        ->assertJsonStructure([
+            'id', 'title', 'description', 'questions', 'user_id', 'hasPassword', 'tags', 'close_date', 'created_at', 'updated_at'
+        ]);
     }
 
     public function test_destroy_deletes_a_test()

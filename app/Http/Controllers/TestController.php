@@ -39,7 +39,8 @@ class TestController extends Controller
             'user_id' => 'required|integer',
             'tags' => 'nullable|json',
             'close_date' => 'date',
-            'password' => 'nullable|string',
+            'password' => 'required|string',
+            'hasPassword' => 'boolean',
         ]);
 
         // validate questions json
@@ -78,7 +79,7 @@ class TestController extends Controller
         }
     }
 
-    public function show($id)
+    public function show(string $id)
     {
         try {
             $test = Test::findOrFail($id);
@@ -90,15 +91,17 @@ class TestController extends Controller
         }
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, string $id)
     {
         $validator = Validator::make($request->all(), [
-            'title' => 'sometimes|required|string|max:255',
-            'description' => 'sometimes|nullable|string',
-            'questions' => 'sometimes|required|json',
-            'user_id' => 'sometimes|required|integer',
-            'tags' => 'sometimes|nullable|json',
-            'close_date' => 'nullable|date',
+            'title' => 'required|string|max:255',
+            'description' => 'required|nullable|string',
+            'questions' => 'required|json',
+            'user_id' => 'required|integer',
+            'tags' => 'required|nullable|json',
+            'close_date' => 'required|nullable|date',
+            'hasPassword' => 'required|boolean',
+            'password' => 'required|string',
         ]);
 
         // validate questions json
@@ -116,9 +119,16 @@ class TestController extends Controller
             return response()->json($validator->errors(), 400);
         }
 
+        $data = $request->all();
+
+        // Check if a test password was provided and hash it
+        if (!empty($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        }
+
         try {
             $test = Test::findOrFail($id);
-            $test->update($request->all());
+            $test->update($data);
             return response()->json($test);
         } catch (ModelNotFoundException $e) {
             return response()->json(['error' => 'Test not found'], 404);

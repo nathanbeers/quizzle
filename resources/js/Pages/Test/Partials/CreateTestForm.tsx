@@ -51,7 +51,6 @@ export default function CreateTestForm({ userID }: { userID: number }) {
 
     useEffect(() => {
         const subscription = watch((value, { name, type }) => {
-            console.log(value, name, type)
             if (typeof type === 'string' && type.includes('.answer')) {
 
                 //reset answer for last question
@@ -86,12 +85,9 @@ export default function CreateTestForm({ userID }: { userID: number }) {
             hasPassword: !!data.password,
         }
 
-        console.log(formData);
-
         try {
             const res = await axios.post(route('tests.store'), formData);
             setFormErrors([]);
-            console.log(res);
         } catch (error: any) {
             console.log(error);
 
@@ -242,10 +238,12 @@ export default function CreateTestForm({ userID }: { userID: number }) {
             <FieldWrapper>
                 <Input
                     register={register}
-                    label='Access Password (optional)'
+                    label='Access Password'
                     type='password'
                     id='password'
                     name='password'
+                    error={errors.password?.type === "required" && 'Password is required'}
+                    required
                 />
             </FieldWrapper>
 

@@ -28,6 +28,7 @@ class Test extends Model
         'questions' => 'array',
         'tags' => 'array',
         'close_date' => 'datetime',
+        'hasPassword' => 'boolean',
     ];
 
     protected $hidden = [
