@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Answer;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Log;
 
 class AnswerController extends Controller
 {
@@ -13,10 +16,21 @@ class AnswerController extends Controller
     {
         $request->validate([
             'test_id' => 'required|exists:tests,id',
-            'answers' => 'required|json',
-            'email' => 'required|email',
-            'name' => 'required|string'
+            'questions' => 'required|json',
+            'email' => [
+                'required',
+                'email',
+                Rule::unique('answers')->where(function ($query) use ($request) {
+                    return $query->where('test_id', $request->test_id)
+                                 ->where('email', $request->email);
+                }),
+            ],
+            'name' => 'required|string',
+        ], [
+            'email.unique' => 'You have already submitted answers for this test.',
         ]);
+
+        Log::info('AnswerController@store', $request->all());
 
         $answer = new Answer($request->all());
         $answer->save();

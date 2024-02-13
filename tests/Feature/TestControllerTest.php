@@ -176,7 +176,6 @@ class TestControllerTest extends TestCase
         $user = User::factory()->create();
         $test = Test::factory()->create();
 
-        $user = User::factory()->create();
         $tags = ['tag1 updated', 'tag2 updated'];
         $validQuestions = json_encode([
             [

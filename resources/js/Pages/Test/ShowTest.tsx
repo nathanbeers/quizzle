@@ -8,6 +8,7 @@ import axios from '@/lib/axios';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import MultipleChoice from '@/Components/Question/MultipleChoice';
 import Textarea from '@/Components/ui/Textarea';
+import { json } from 'stream/consumers';
 
 type PasswordInputs = {
     password: string;
@@ -38,6 +39,7 @@ export default function ShowTest() {
     const [passwordError, setPasswordError] = useState<string>('');
     const [showPasswordForm, setShowPasswordForm] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
+    const [formError, setFormError] = useState<string>();
 
     const user = usePage<PageProps>().props.auth.user;
     const testId = usePage<PageProps>().props.testId;
@@ -63,7 +65,6 @@ export default function ShowTest() {
 
         try {
             const res = await axios.post(route('test.verify_password'), {password: data.password, test_id: testId});
-            console.log(res);
             setShowPasswordForm(false);
         } catch (error: any) {
             console.log(error);
@@ -76,6 +77,7 @@ export default function ShowTest() {
 
     const onSubmitTest: SubmitHandler<QuestionInputs> = async (data) => {
         setIsLoading(true);
+        setFormError('');
 
         data.questions.forEach((question, index) => {
             const questionData = questions[index];
@@ -86,13 +88,14 @@ export default function ShowTest() {
         const formData = {
             ...data,
             test_id: testId,
+            questions: JSON.stringify(data.questions),
         }
 
         try {
-            // const res = await axios.post(route('test.verify_password'), formData);
-            // console.log(res);
+            const res = await axios.post(route('test.answers.store', {id: testId}), formData);
+            console.log(res);
         } catch (error: any) {
-            console.log(error);
+            setFormError(error.response.data.message);
         } finally {
             setIsLoading(false);
         }
@@ -156,6 +159,28 @@ export default function ShowTest() {
                         </form>
                     ) : (
                         <form className="mb-6" onSubmit={answerHandleSubmit(onSubmitTest)}>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FieldWrapper>
+                                    <Input
+                                        label="Name"
+                                        id="name"
+                                        name="name"
+                                        register={answerRegister}
+                                        error={answerErrors.name?.message}
+                                        required
+                                    />
+                                </FieldWrapper>
+                                <FieldWrapper>
+                                    <Input
+                                        label="Email"
+                                        id="email"
+                                        name="email"
+                                        register={answerRegister}
+                                        error={answerErrors.email?.message}
+                                        required
+                                    />
+                                </FieldWrapper>
+                            </div>
                             {questions.map((question: any, index: number) => (
                                 <div key={index}>
                                     {question.type === 'Multiple Choice'  || question.type === 'True False' ? (
@@ -191,6 +216,10 @@ export default function ShowTest() {
                                     )}
                                 </div>
                             ))}
+
+                            {formError && (
+                                <p className="text-red-500 text-sm my-3">{formError}</p>
+                            )}
 
                             <FieldWrapper>
                                 <Button type="submit" color="green">Submit Answers</Button>
