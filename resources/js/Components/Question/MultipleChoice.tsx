@@ -10,15 +10,17 @@ interface MultipleChoiceProps {
   choices: Choice[];
   questionIndex: number;
   question: string;
+  error: string | undefined;
   register: UseFormRegister<any>;
 }
 
-const MultipleChoice = ({ choices, question, questionIndex, register }: MultipleChoiceProps) => {
+const MultipleChoice = ({ choices, question, questionIndex, error, register }: MultipleChoiceProps) => {
   return (
     <FieldWrapper>
       <RadioGroup
         layout="vertical"
         legend={question}
+        error={error}
         required
       >
         {choices.map((choice) => (
@@ -28,7 +30,7 @@ const MultipleChoice = ({ choices, question, questionIndex, register }: Multiple
             id={`${choice.id}`}
             label={choice.text}
             value={choice.text}
-            name={`questions.${questionIndex}.answer`}
+            name={`questions.${questionIndex}.answerChosen`}
             className='mb-2'
             required={true}
           />

@@ -9,8 +9,18 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import MultipleChoice from '@/Components/Question/MultipleChoice';
 import Textarea from '@/Components/ui/Textarea';
 
-type Inputs = {
+type PasswordInputs = {
     password: string;
+};
+
+type QuestionInputs = {
+    name: string;
+    email: string;
+    questions: {
+        answerChosen: string;
+        correctAnswer: string;
+        question_id: string;
+    }[];
 };
 
 const order: QuestionTypes[] = ['Multiple Choice', 'True False', 'Short Answer', 'Essay'];
@@ -36,9 +46,17 @@ export default function ShowTest() {
         register,
         handleSubmit,
         formState: { errors },
-    } = useForm<Inputs>();
+    } = useForm<PasswordInputs>();
 
-    const onSubmit: SubmitHandler<Inputs> = async (data) => {
+    const {
+        register: answerRegister,
+        handleSubmit: answerHandleSubmit,
+        getValues: getAnswerValues,
+        setValue: setAnswerValue,
+        formState: { errors: answerErrors },
+    } = useForm<QuestionInputs>();
+
+    const onSubmitPW: SubmitHandler<PasswordInputs> = async (data) => {
         setPasswordError('');
         setIsLoading(true);
         console.log(data);
@@ -56,6 +74,30 @@ export default function ShowTest() {
         }
     }
 
+    const onSubmitTest: SubmitHandler<QuestionInputs> = async (data) => {
+        setIsLoading(true);
+
+        data.questions.forEach((question, index) => {
+            const questionData = questions[index];
+            question.question_id = questionData.question_id;
+            question.correctAnswer = questionData.answer;
+        });
+
+        const formData = {
+            ...data,
+            test_id: testId,
+        }
+
+        try {
+            // const res = await axios.post(route('test.verify_password'), formData);
+            // console.log(res);
+        } catch (error: any) {
+            console.log(error);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
     useEffect(() => {
         setIsLoading(true);
         const fetchTest = async () => {
@@ -63,8 +105,6 @@ export default function ShowTest() {
                 const response = await axios.get(route('tests.show', { id: testId }));
                 const { data } = response;
                 const { questions, hasPassword, } = data;
-
-                console.log(JSON.parse(questions));
 
                 if (hasPassword) {
                     setShowPasswordForm(true);
@@ -97,7 +137,7 @@ export default function ShowTest() {
                     )}
 
                     {showPasswordForm ? (
-                        <form className="" onSubmit={handleSubmit(onSubmit)}>
+                        <form className="" onSubmit={handleSubmit(onSubmitPW)}>
                             <p className='mb-4 text-xl'>This test is password protected.</p>
                             <FieldWrapper>
                                 <Input
@@ -115,25 +155,25 @@ export default function ShowTest() {
                             </FieldWrapper>
                         </form>
                     ) : (
-                        <>
+                        <form className="mb-6" onSubmit={answerHandleSubmit(onSubmitTest)}>
                             {questions.map((question: any, index: number) => (
-                                <div key={index} className="mb-6">
-
+                                <div key={index}>
                                     {question.type === 'Multiple Choice'  || question.type === 'True False' ? (
                                         <MultipleChoice
                                             choices={question.type === 'Multiple Choice' ? question.choices : question.trueFalseChoices}
                                             question={question.title}
                                             questionIndex={index}
-                                            register={register}
+                                            register={answerRegister}
+                                            error={answerErrors.questions?.[index]?.answerChosen?.message}
                                         />
                                     ) : question.type === 'Short Answer' ? (
                                         <FieldWrapper>
                                             <Input
                                                 label={`${index + 1}. ${question.title}`}
-                                                id={`questions.${index}.answer`}
-                                                name={`questions.${index}.answer`}
-                                                value={question.answer}
-                                                register={register}
+                                                id={`questions.${index}.answerChosen`}
+                                                name={`questions.${index}.answerChosen`}
+                                                register={answerRegister}
+                                                error={answerErrors.questions?.[index]?.answerChosen?.message}
                                                 required
                                             />
                                         </FieldWrapper>
@@ -141,17 +181,21 @@ export default function ShowTest() {
                                         <FieldWrapper>
                                             <Textarea
                                                 label={`${index + 1}. ${question.title}`}
-                                                id={`questions.${index}.answer`}
-                                                name={`questions.${index}.answer`}
-                                                register={register}
+                                                id={`questions.${index}.answerChosen`}
+                                                name={`questions.${index}.answerChosen`}
+                                                register={answerRegister}
+                                                error={answerErrors.questions?.[index]?.answerChosen?.message}
                                                 required
                                             />
                                         </FieldWrapper>
                                     )}
-
                                 </div>
                             ))}
-                        </>
+
+                            <FieldWrapper>
+                                <Button type="submit" color="green">Submit Answers</Button>
+                            </FieldWrapper>
+                        </form>
                     )}
                 </div>
             </div>
